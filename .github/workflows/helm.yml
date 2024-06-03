@@ -21,7 +21,7 @@ jobs:
     - name: Push chart
       uses: appany/helm-oci-chart-releaser@v0.3.0
       with:
-        name: external-dns-hostsfile-webhook
+        name: external-dns-hostsfile-webhook-chart
         repository: joscha-alisch
         tag: 0.1.0
         path: deploy/chart
