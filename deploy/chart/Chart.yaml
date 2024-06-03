@@ -1,0 +1,12 @@
+apiVersion: v2
+name: external-dns-hostsfile-webhook
+version: "0.0.1"
+appVersion: "0.0.1"
+description: Deploys the hostsfile-webhook for external-dns
+keywords:
+  - A list of keywords about this project (optional)
+home: https://github.com/joscha-alisch/external-dns-hostsfile-webhook
+sources:
+  - https://github.com/joscha-alisch/external-dns-hostsfile-webhook
+maintainers:
+  - name: Joscha Alisch
