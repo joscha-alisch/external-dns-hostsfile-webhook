@@ -14,15 +14,15 @@ import (
 
 type API struct {
 	chi.Router
-	provider      provider.Provider
-	hostsFilePath string
+	provider  provider.Provider
+	hostsFile string
 }
 
-func New(p provider.Provider, hostsFilePath string) *API {
+func New(p provider.Provider, hostsFile string) *API {
 	a := &API{
 		chi.NewRouter(),
 		p,
-		hostsFilePath,
+		hostsFile,
 	}
 	a.Get("/", a.negotiate)
 	a.Get("/records", a.records)
@@ -34,14 +34,12 @@ func New(p provider.Provider, hostsFilePath string) *API {
 }
 
 func (a API) hosts(w http.ResponseWriter, r *http.Request) {
-	f, err := os.Open(a.hostsFilePath)
-	if os.IsNotExist(err) {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	} else if err != nil {
+	f, err := os.Open(a.hostsFile)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	defer f.Close()
 
 	_, err = io.Copy(w, f)
 	if err != nil {
@@ -59,7 +57,7 @@ func (a API) negotiate(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set(contentTypeHeader, string(mediaTypeVersion1))
 	if _, writeError := w.Write(b); writeError != nil {
-		fmt.Printf("error writing response\n")
+		fmt.Printf("error writing response: %s\n", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -69,6 +67,7 @@ func (a API) records(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	records, err := a.provider.Records(ctx)
 	if err != nil {
+		fmt.Printf("error getting records: %s\n", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -77,6 +76,7 @@ func (a API) records(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(varyHeader, contentTypeHeader)
 	err = json.NewEncoder(w).Encode(records)
 	if err != nil {
+		fmt.Printf("error encoding records: %s\n", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -88,12 +88,15 @@ func (a API) applyChanges(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&changes); err != nil {
 		w.Header().Set(contentTypeHeader, contentTypePlaintext)
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Printf("error decoding changes: %s\n", err.Error())
+
 		return
 	}
 
 	if err := a.provider.ApplyChanges(ctx, &changes); err != nil {
 		w.Header().Set(contentTypeHeader, contentTypePlaintext)
 		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Printf("error applying changes: %s\n", err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -104,15 +107,19 @@ func (a API) adjustEndpoints(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&pve); err != nil {
 		w.Header().Set(contentTypeHeader, contentTypePlaintext)
 		w.WriteHeader(http.StatusBadRequest)
-		errMessage := fmt.Sprintf("failed to decode request body: %v", err)
-		println(errMessage)
+		fmt.Printf("failed to decode request body: %v\n", err)
 		return
 	}
-	pve, _ = a.provider.AdjustEndpoints(pve)
+	pve, err := a.provider.AdjustEndpoints(pve)
+	if err != nil {
+		fmt.Printf("error adjusting endpoints %v\n", err)
+		return
+	}
 	out, _ := json.Marshal(&pve)
 	w.Header().Set(contentTypeHeader, string(mediaTypeVersion1))
 	w.Header().Set(varyHeader, contentTypeHeader)
 	if _, writeError := fmt.Fprint(w, string(out)); writeError != nil {
-		println(writeError.Error())
+		fmt.Printf("error writing response %v\n", writeError)
+		return
 	}
 }
