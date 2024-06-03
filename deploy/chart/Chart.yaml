@@ -1,5 +1,5 @@
 apiVersion: v2
-name: external-dns-hostsfile-webhook
+name: helm-external-dns-hostsfile-webhook
 version: "0.0.1"
 appVersion: "0.0.1"
 description: Deploys the hostsfile-webhook for external-dns
