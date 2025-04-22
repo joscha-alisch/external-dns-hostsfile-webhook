@@ -23,7 +23,7 @@ jobs:
       with:
         name: helm-external-dns-hostsfile-webhook
         repository: joscha-alisch
-        tag: 0.1.0
+        tag: 0.2.0
         path: deploy/chart
         registry: ghcr.io
         registry_username: ${{ github.actor }}
