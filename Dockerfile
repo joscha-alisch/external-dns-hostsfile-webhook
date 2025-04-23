@@ -8,7 +8,7 @@ FROM alpine
 
 COPY --from=builder /build/out/webhook /app/webhook
 
-RUN useradd -u 1000 -s /bin/bash webhook
+RUN addgroup -S webhook && adduser -S webhook -G webhook
 USER webhook
 
 ENTRYPOINT ["/app/webhook"]
