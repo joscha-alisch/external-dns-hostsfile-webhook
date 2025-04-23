@@ -24,6 +24,12 @@ func New(p provider.Provider, hostsFile string) *API {
 		p,
 		hostsFile,
 	}
+
+	a.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "ok")
+	})
+
 	a.Get("/", a.negotiate)
 	a.Get("/records", a.records)
 	a.Post("/records", a.applyChanges)
